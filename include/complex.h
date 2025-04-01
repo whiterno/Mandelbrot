@@ -4,8 +4,8 @@
 #include <math.h>
 
 struct Complex{
-    float real;
-    float imag;
+    double real;
+    double imag;
 };
 
 Complex addC(Complex c1, Complex c2){

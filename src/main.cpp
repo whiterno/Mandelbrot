@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
+#include <SFML/Window.hpp>
 
 #include "complex.h"
 
@@ -9,14 +10,20 @@ const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 800;
 const int WINDOW_SIZE = WINDOW_WIDTH * WINDOW_HEIGHT;
 
-const int ITERATIONS = 200;
+const int ITERATIONS = 256;
 
-sf::Vertex mandelbrotSetPoint(sf::Vector2i center_pos, float i, float j, float scale);
+sf::Vertex mandelbrotSetPoint(sf::Vector2i center_pos, float i, float j, double scale);
 sf::Color setColor(int crit);
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}), "My window");
+    sf::ContextSettings settings;
+    settings.antiAliasingLevel = 0;
+    sf::RenderWindow window(sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
+                            "My window",
+                            sf::Style::Default,
+                            sf::State::Windowed,
+                            settings);
     sf::Clock clock;
 
     sf::Vector2i center_pos({700, 400});
@@ -54,6 +61,11 @@ int main()
                 released_pos.x = released->position.x;
                 released_pos.y = released->position.y;
                 is_clicked = false;
+
+                float multiplier = 1000.f / (released_pos.x - clicked_pos.x);
+                scale *= multiplier;
+                center_pos.x = multiplier * (center_pos.x - clicked_pos.x);
+                center_pos.y = multiplier * (center_pos.y - clicked_pos.y);
 
                 mouse_box.setPosition({0.f, 0.f});
                 mouse_box.setSize({0.f, 0.f});
@@ -94,8 +106,16 @@ int main()
 
         sf::Vertex video_memory[WINDOW_SIZE];
 
+        // for (int i = 0; i < WINDOW_WIDTH; i++){
+        //     for (int j = 0; j < WINDOW_HEIGHT; j += 1){
+        //         sf::Vertex vertex = mandelbrotSetPoint(center_pos, i, j, scale);
+
+        //         video_memory[i * WINDOW_HEIGHT + j] = vertex;
+        //     }
+        // }
+
         for (int i = 0; i < WINDOW_WIDTH; i++){
-            for (int j = 0; j < WINDOW_HEIGHT; j += 1){
+            for (int j = 0; j < WINDOW_HEIGHT; j += 4){
                 sf::Vertex vertex = mandelbrotSetPoint(center_pos, i, j, scale);
 
                 video_memory[i * WINDOW_HEIGHT + j] = vertex;
@@ -117,14 +137,14 @@ int main()
     }
 }
 
-sf::Vertex mandelbrotSetPoint(sf::Vector2i center_pos, float i, float j, float scale){
+sf::Vertex mandelbrotSetPoint(sf::Vector2i center_pos, float i, float j, double scale){
     sf::Vertex vertex{{i, j}, sf::Color::White, {i, j}};
 
     Complex num = {.real = (i - center_pos.x) / (scale * 300), .imag = (j - center_pos.y) / (scale * 300)};
 
-    float ro    = sqrt((num.real - 1.f/4) * (num.real - 1.f/4) + num.imag * num.imag);
-    float teta  = atan2(num.imag, num.real - 1.f/4);
-    float ro_c  = 1.f/2 -1.f/2 * cos(teta);
+    double ro    = sqrt((num.real - 1.f/4) * (num.real - 1.f/4) + num.imag * num.imag);
+    double teta  = atan2(num.imag, num.real - 1.f/4);
+    double ro_c  = 1.f/2 -1.f/2 * cos(teta);
 
     int crit = 0;
     if (ro <= ro_c){
@@ -152,9 +172,9 @@ sf::Vertex mandelbrotSetPoint(sf::Vector2i center_pos, float i, float j, float s
 sf::Color setColor(int crit){
     if (crit == 0) return sf::Color::Black;
 
-    uint8_t r = (4 * crit) % 255;
+    uint8_t r = (6 * crit) % 255;
     uint8_t g = (6 * crit) % 255;
-    uint8_t b = (8 * crit) % 255;
+    uint8_t b = (6 * crit) % 255;
 
     sf::Color color{r, g, b, 255};
 
