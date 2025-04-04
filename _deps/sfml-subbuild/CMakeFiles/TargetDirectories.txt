@@ -1,0 +1,3 @@
+/Users/timofejkruckov/mandelbrot/_deps/sfml-subbuild/CMakeFiles/sfml-populate.dir
+/Users/timofejkruckov/mandelbrot/_deps/sfml-subbuild/CMakeFiles/edit_cache.dir
+/Users/timofejkruckov/mandelbrot/_deps/sfml-subbuild/CMakeFiles/rebuild_cache.dir

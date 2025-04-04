@@ -17,6 +17,6 @@ add_compile_options(-O2)
 
 include_directories(include)
 
-add_executable(main src/main.cpp include/complex.h)
+add_executable(main src/main.cpp src/draw_mandelbrot.cpp src/complex_nums.cpp src/app.cpp src/tests.cpp)
 target_compile_features(main PRIVATE cxx_std_17)
 target_link_libraries(main PRIVATE SFML::Graphics)
