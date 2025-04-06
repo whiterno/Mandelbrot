@@ -1,42 +1,28 @@
 #ifndef DRAW_MANDELBROT_H
 #define DRAW_MANDELBROT_H
 
-#define _PARALLEL_COEF 16
-typedef double dot_type;
+#ifndef ALGO_OPTIMIZATION
+#define ALGO_OPTIMIZATION 0
+#endif
 
-const int PARALLEL_COEF = _PARALLEL_COEF;
+#define PARALLEL_COEF 12
 
-void drawWithIntrinsics(sf::Vertex* video_memory,
-                        sf::Vector2f center_pos,
-                        float scale);
-void drawNoOp(sf::Vertex* video_memory,
-              sf::Vector2f center_pos,
-              float scale);
-void drawOp(sf::Vertex* video_memory,
-            sf::Vector2f center_pos,
-            float scale);
+void drawWithIntrinsics(sf::Vertex* video_memory, ScaleView* view);
 
-sf::Vertex mandelbrotSetPoint(sf::Vector2f center_pos,
-                              float i,
-                              float j,
-                              double scale);
+void drawNoOp(sf::Vertex* video_memory, ScaleView* view);
 
-void mandelbrotSetPointARMIntrinces(sf::Vector2f center_pos,
-                                    float i,
-                                    float j,
-                                    float scale,
-                                    sf::Color colors[4]);
+void drawOp(sf::Vertex* video_memory, ScaleView* view);
 
-void mandelbrotSetPointParallel(sf::Vector2f center_pos,
-                                dot_type i,
-                                dot_type j,
-                                dot_type scale,
-                                sf::Color colors[PARALLEL_COEF]);
+sf::Vertex mandelbrotSetPoint(ScaleView* view, float i, float j);
+
+void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Color colors[4]);
+
+void mandelbrotSetPointParallel(ScaleView* view, dot_type i, dot_type j, sf::Color colors[PARALLEL_COEF]);
 
 sf::Color setColor(int crit);
 
-#define REAL(inx)           (i - center_pos.x) / (scale * 300)
-#define IMAG(inx)           (j + inx - center_pos.y) / (scale * 300)
+#define REAL(inx)           (i - view->center_pos.x) / (view->scale * DOTS_PER_PIXEL)
+#define IMAG(inx)           (j + inx - view->center_pos.y) / (view->scale * DOTS_PER_PIXEL)
 
 #define RO(inx)             sqrt((real[inx] - 1.f/4) * (real[inx] - 1.f/4) + imag[inx] * imag[inx])
 #define TETA(inx)           atan2(imag[inx], real[inx] - 1.f/4)
@@ -108,7 +94,7 @@ sf::Color setColor(int crit);
 #define _VERTEX_COLOR_16    VERTEX_COLOR(0); VERTEX_COLOR(1); VERTEX_COLOR(2); VERTEX_COLOR(3); VERTEX_COLOR(4); VERTEX_COLOR(5); VERTEX_COLOR(6); VERTEX_COLOR(7); VERTEX_COLOR(8); VERTEX_COLOR(9); VERTEX_COLOR(10); VERTEX_COLOR(11); VERTEX_COLOR(12); VERTEX_COLOR(13); VERTEX_COLOR(14); VERTEX_COLOR(15)
 #define _VERTEX_MEM_16      VERTEX_MEM(0); VERTEX_MEM(1); VERTEX_MEM(2); VERTEX_MEM(3); VERTEX_MEM(4); VERTEX_MEM(5); VERTEX_MEM(6); VERTEX_MEM(7); VERTEX_MEM(8); VERTEX_MEM(9); VERTEX_MEM(10); VERTEX_MEM(11); VERTEX_MEM(12); VERTEX_MEM(13); VERTEX_MEM(14); VERTEX_MEM(15)
 
-#if _PARALLEL_COEF == 4
+#if PARALLEL_COEF == 4
 #define _REAL               _REAL_4
 #define _IMAG               _IMAG_4
 #define _RO                 _RO_4
@@ -124,7 +110,7 @@ sf::Color setColor(int crit);
 #define _VERTEX_MEM         _VERTEX_MEM_4
 #endif
 
-#if _PARALLEL_COEF == 8
+#if PARALLEL_COEF == 8
 #define _REAL               _REAL_8
 #define _IMAG               _IMAG_8
 #define _RO                 _RO_8
@@ -140,7 +126,7 @@ sf::Color setColor(int crit);
 #define _VERTEX_MEM         _VERTEX_MEM_8
 #endif
 
-#if _PARALLEL_COEF == 12
+#if PARALLEL_COEF == 12
 #define _REAL               _REAL_12
 #define _IMAG               _IMAG_12
 #define _RO                 _RO_12
@@ -156,7 +142,7 @@ sf::Color setColor(int crit);
 #define _VERTEX_MEM         _VERTEX_MEM_12
 #endif
 
-#if _PARALLEL_COEF == 16
+#if PARALLEL_COEF == 16
 #define _REAL               _REAL_16
 #define _IMAG               _IMAG_16
 #define _RO                 _RO_16

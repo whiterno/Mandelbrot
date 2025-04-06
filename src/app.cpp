@@ -9,17 +9,17 @@
 #include "app.h"
 #include "draw_mandelbrot.h"
 
-void runApp(){
+void runApp(draw_t draw){
     sf::RenderWindow window(sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}), "Mandelbrot", sf::Style::Default);
     sf::Clock clock;
 
-    sf::Vector2f center_pos({WINDOW_WIDTH / 3 * 2, WINDOW_HEIGHT / 2});
-    float scale             = BASE_SCALE;
-    int shift               = BASE_SHIFT;
+    ScaleView view = {.scale      = BASE_SCALE,
+                      .shift      = BASE_SHIFT,
+                      .center_pos = {WINDOW_WIDTH / 3 * 2, WINDOW_HEIGHT / 2}};
 
-    bool is_clicked             = false;
-    sf::Vector2f clicked_pos    = {};
-    sf::Vector2f released_pos   = {};
+    MouseBox box = {.is_clicked   = false,
+                    .clicked_pos  = {},
+                    .released_pos = {}};
 
     sf::RectangleShape mouse_box(START_POINT);
     sf::Color mouse_box_color(GREY_RGB);
@@ -30,30 +30,30 @@ void runApp(){
     text_fps.setCharacterSize(24);
     text_fps.setFillColor(sf::Color::Green);
 
-    while (window.isOpen()){
-        // TODO: перенести расчеты в конец
-        float currentTime   = clock.restart().asSeconds();
-        int fps             = 1.f / currentTime;
-        std::string fps_str = std::to_string(fps);
+    sf::Vertex* video_memory = (sf::Vertex*)calloc(WINDOW_SIZE, sizeof(sf::Vertex));
 
-        text_fps.setString(fps_str);
+    while (window.isOpen()){
+        float currentTime   = clock.restart().asSeconds();
 
         while (const std::optional event = window.pollEvent()){
             closeHandler(event, &window);
-            mouseHandler(event, &center_pos, &clicked_pos, &released_pos, &is_clicked, &scale, &mouse_box);
-            keyboardHandler(event, &window, &center_pos, &scale, shift);
+            mouseHandler(event, &view, &box, &mouse_box);
+            keyboardHandler(event, &window, &view);
         }
-        if (is_clicked){
+        if (box.is_clicked){
             auto [x, y] = sf::Mouse::getPosition(window);
 
-            mouse_box.setSize({x - clicked_pos.x, y - clicked_pos.y});
+            mouse_box.setSize({x - box.clicked_pos.x, y - box.clicked_pos.y});
         }
 
         window.clear(sf::Color::Black);
 
-        sf::Vertex video_memory[WINDOW_SIZE];
+        draw(video_memory, &view);
 
-        drawWithIntrinsics(video_memory, center_pos, scale);
+        int fps             = 1.f / currentTime;
+        std::string fps_str = std::to_string(fps);
+
+        text_fps.setString(fps_str);
 
         window.draw(video_memory, WINDOW_SIZE, sf::PrimitiveType::Points);
         window.draw(text_fps);
@@ -61,84 +61,71 @@ void runApp(){
 
         window.display();
     }
+
+    free(video_memory);
 }
 
-void keyboardHandler(const std::optional<sf::Event> event,
-                     sf::RenderWindow*              window,
-                     sf::Vector2f*                  center_pos,
-                     float*                         scale,
-                     int                            shift){
-    assert(center_pos);
-    assert(scale);
+void keyboardHandler(const std::optional<sf::Event> event, sf::RenderWindow* window, ScaleView* view){
+    assert(view);
+    assert(window);
 
     if (const auto* key_pressed = event->getIf<sf::Event::KeyPressed>()){
         if (key_pressed->scancode == sf::Keyboard::Scancode::Escape){
             window->close();
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::Right){
-            center_pos->x -= shift;
+            view->center_pos.x -= view->shift;
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::Up){
-            center_pos->y += shift;
+            view->center_pos.y += view->shift;
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::Left){
-            center_pos->x += shift;
+            view->center_pos.x += view->shift;
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::Down){
-            center_pos->y -= shift;
+            view->center_pos.y -= view->shift;
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::I){
-            //TODO: magic number
-            *scale *= 2;
-            center_pos->x = 2 * center_pos->x - WINDOW_WIDTH / 2;
-            center_pos->y = 2 * center_pos->y - WINDOW_HEIGHT / 2;
+            view->scale *= SCALE_MULT;
+            view->center_pos.x = SCALE_MULT * (view->center_pos.x - WINDOW_WIDTH / 4);
+            view->center_pos.y = SCALE_MULT * (view->center_pos.y - WINDOW_HEIGHT / 4);
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::D){
-            *scale /= 2;
-            center_pos->x = center_pos->x / 2 + WINDOW_WIDTH / 4;
-            center_pos->y = center_pos->y / 2 + WINDOW_HEIGHT / 4;
+            view->scale /= 2;
+            view->center_pos.x = view->center_pos.x / SCALE_MULT + WINDOW_WIDTH / 4;
+            view->center_pos.y = view->center_pos.y / SCALE_MULT + WINDOW_HEIGHT / 4;
         }
     }
 }
 
-void mouseHandler(const std::optional<sf::Event>    event,
-                  sf::Vector2f*                     center_pos,
-                  sf::Vector2f*                     clicked_pos,
-                  sf::Vector2f*                     released_pos,
-                  bool*                             is_clicked,
-                  float*                            scale,
-                  sf::RectangleShape*               mouse_box){
-    assert(center_pos);
-    assert(clicked_pos);
-    assert(released_pos);
-    assert(is_clicked);
-    assert(scale);
+void mouseHandler(const std::optional<sf::Event> event, ScaleView* view, MouseBox* box, sf::RectangleShape* mouse_box){
+    assert(box);
+    assert(view);
     assert(mouse_box);
 
     if (const auto* pressed = event->getIf<sf::Event::MouseButtonPressed>()){
-        clicked_pos->x = pressed->position.x;
-        clicked_pos->y = pressed->position.y;
-        *is_clicked = true;
+        box->clicked_pos.x = pressed->position.x;
+        box->clicked_pos.y = pressed->position.y;
+        box->is_clicked = true;
 
-        mouse_box->setPosition(*clicked_pos);
+        mouse_box->setPosition(box->clicked_pos);
     }
     if (const auto* released = event->getIf<sf::Event::MouseButtonReleased>()){
-        released_pos->x = released->position.x;
-        released_pos->y = released->position.y;
-        *is_clicked = false;
+        box->released_pos.x = released->position.x;
+        box->released_pos.y = released->position.y;
+        box->is_clicked = false;
 
-        float multiplier = 1000.f / (released_pos->x - clicked_pos->x);
-        *scale *= multiplier;
-        center_pos->x = multiplier * (center_pos->x - clicked_pos->x);
-        center_pos->y = multiplier * (center_pos->y - clicked_pos->y);
+        float multiplier = WINDOW_WIDTH / (float)(box->released_pos.x - box->clicked_pos.x);
+        view->scale *= multiplier;
+        view->center_pos.x = multiplier * (view->center_pos.x - box->clicked_pos.x);
+        view->center_pos.y = multiplier * (view->center_pos.y - box->clicked_pos.y);
 
         mouse_box->setPosition({0.f, 0.f});
         mouse_box->setSize({0.f, 0.f});
     }
 }
 
-void closeHandler(const std::optional<sf::Event>    event,
-                  sf::RenderWindow*                 window){
+void closeHandler(const std::optional<sf::Event> event, sf::RenderWindow* window){
     assert(window);
 
     if (event->is<sf::Event::Closed>()) window->close();

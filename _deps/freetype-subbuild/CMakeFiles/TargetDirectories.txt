@@ -1,3 +1,0 @@
-/Users/timofejkruckov/mandelbrot/_deps/freetype-subbuild/CMakeFiles/freetype-populate.dir
-/Users/timofejkruckov/mandelbrot/_deps/freetype-subbuild/CMakeFiles/edit_cache.dir
-/Users/timofejkruckov/mandelbrot/_deps/freetype-subbuild/CMakeFiles/rebuild_cache.dir

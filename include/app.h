@@ -4,32 +4,47 @@
 #define START_POINT     {0, 0}
 #define GREY_RGB        255, 255, 255, 120
 
+#ifndef dot_type
+#define dot_type float
+#endif
+
 const int WINDOW_WIDTH  = 1200;
 const int WINDOW_HEIGHT = 816;
 const int WINDOW_SIZE   = WINDOW_WIDTH * WINDOW_HEIGHT;
 
-const float BASE_SCALE  = 1;
-const int BASE_SHIFT    = 100;
+const float BASE_SCALE   = 1;
+const int BASE_SHIFT     = 100;
+const int DOTS_PER_PIXEL = 300;
+const float SCALE_MULT   = 2;
+
 
 const int ITERATIONS = 1024;
 
-void keyboardHandler(const std::optional<sf::Event> event,
-                     sf::RenderWindow*              window,
-                     sf::Vector2f*                  center_pos,
-                     float*                         scale,
-                     int                            shift);
+typedef struct Vector{
+    dot_type x;
+    dot_type y;
+} Vector;
 
-void mouseHandler(const std::optional<sf::Event>    event,
-                  sf::Vector2f*                     center_pos,
-                  sf::Vector2f*                     clicked_pos,
-                  sf::Vector2f*                     released_pos,
-                  bool*                             is_clicked,
-                  float*                            scale,
-                  sf::RectangleShape*               mouse_box);
+typedef struct ScaleView{
+    float scale;
+    int shift;
+    Vector center_pos;
+} ScaleView;
 
-void closeHandler(const std::optional<sf::Event>    event,
-                  sf::RenderWindow*                 window);
+typedef struct MouseBox{
+    bool is_clicked;
+    sf::Vector2f clicked_pos;
+    sf::Vector2f released_pos;
+} MouseBox;
 
-void runApp();
+typedef void (*draw_t)(sf::Vertex*, ScaleView*);
+
+void keyboardHandler(const std::optional<sf::Event> event, sf::RenderWindow* window, ScaleView* view);
+
+void mouseHandler(const std::optional<sf::Event> event, ScaleView* view, MouseBox* box, sf::RectangleShape* mouse_box);
+
+void closeHandler(const std::optional<sf::Event> event, sf::RenderWindow* window);
+
+void runApp(draw_t draw);
 
 #endif

@@ -10,7 +10,8 @@
 #include "draw_mandelbrot.h"
 
 double runTests(int tests_amount, int optimization){
-    // if (optimization == 0){
-    // }
+    for (int i = 0; i < tests_amount; i++){
+        printf("nums\n");
+    }
     return 0;
 }

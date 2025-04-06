@@ -9,9 +9,7 @@
 #include "app.h"
 #include "draw_mandelbrot.h"
 
-void drawWithIntrinsics(sf::Vertex* video_memory,
-                        sf::Vector2f center_pos,
-                        float scale){
+void drawWithIntrinsics(sf::Vertex* video_memory, ScaleView* view){
     for (int i = 0; i < WINDOW_WIDTH; i++){
         for (int j = 0; j < WINDOW_HEIGHT; j += 4){
             long long col = i * WINDOW_HEIGHT;
@@ -19,7 +17,7 @@ void drawWithIntrinsics(sf::Vertex* video_memory,
 
             _VERTEX_4;
 
-            mandelbrotSetPointARMIntrinces(center_pos, i, j, scale, colors);
+            mandelbrotSetPointARMIntrinsics(view, i, j, colors);
 
             _VERTEX_COLOR_4;
 
@@ -28,21 +26,17 @@ void drawWithIntrinsics(sf::Vertex* video_memory,
     }
 }
 
-void drawNoOp(sf::Vertex*  video_memory,
-                           sf::Vector2f center_pos,
-                           float scale){
+void drawNoOp(sf::Vertex* video_memory, ScaleView* view){
     for (int i = 0; i < WINDOW_WIDTH; i++){
         for (int j = 0; j < WINDOW_HEIGHT; j += 1){
-            sf::Vertex vertex1 = mandelbrotSetPoint(center_pos, i, j, scale);
+            sf::Vertex vertex1 = mandelbrotSetPoint(view, i, j);
 
             video_memory[i * WINDOW_HEIGHT + j]     = vertex1;
         }
     }
 }
 
-void drawOp(sf::Vertex* video_memory,
-            sf::Vector2f center_pos,
-            float scale){
+void drawOp(sf::Vertex* video_memory, ScaleView* view){
     for (int i = 0; i < WINDOW_WIDTH; i++){
         for (int j = 0; j < WINDOW_HEIGHT; j += PARALLEL_COEF){
             long long col = i * WINDOW_HEIGHT;
@@ -50,7 +44,7 @@ void drawOp(sf::Vertex* video_memory,
 
             _VERTEX;
 
-            mandelbrotSetPointParallel(center_pos, i, j, scale, colors);
+            mandelbrotSetPointParallel(view, i, j, colors);
 
             _VERTEX_COLOR;
 
@@ -59,30 +53,34 @@ void drawOp(sf::Vertex* video_memory,
     }
 }
 
-sf::Vertex mandelbrotSetPoint(sf::Vector2f center_pos,
-                              float i,
-                              float j,
-                              double scale){
+sf::Vertex mandelbrotSetPoint(ScaleView* view, float i, float j){
     sf::Vertex vertex{{i, j}, sf::Color::White, {i, j}};
-    // TODO: magic number destroy!
-    Complex_t num = {.real = (i - center_pos.x) / (scale * 300), .imag = (j - center_pos.y) / (scale * 300)};
+    Complex_t num = {REAL(0), IMAG(0)};
+
+    #if ALGO_OPTIMIZATION == 1
 
     double ro    = sqrt((num.real - 1.f/4) * (num.real - 1.f/4) + num.imag * num.imag);
     double teta  = atan2(num.imag, num.real - 1.f/4);
     double ro_c  = 1.f/2 -1.f/2 * cos(teta);
 
+    if (ro <= ro_c){
+        vertex.color = sf::Color::Black;
+
+        return vertex;
+    }
+
+    #endif
+
     int crit = 0;
-    if (ro > ro_c){
-        Complex_t seq_mem = num;
+    Complex_t seq_mem = num;
 
-        for (int k = 1; k < ITERATIONS; k += 1){
-            Complex_t square = mulC(seq_mem, seq_mem);
-            seq_mem = addC(square, num);
+    for (int k = 1; k < ITERATIONS; k += 1){
+        Complex_t square = mulC(seq_mem, seq_mem);
+        seq_mem = addC(square, num);
 
-            if (modC(seq_mem) >= 4){
-                crit = k;
-                break;
-            }
+        if (modC(seq_mem) >= 4){
+            crit = k;
+            break;
         }
     }
 
@@ -91,21 +89,21 @@ sf::Vertex mandelbrotSetPoint(sf::Vector2f center_pos,
     return vertex;
 }
 
-void mandelbrotSetPointARMIntrinces(sf::Vector2f center_pos,
-                                    float i,
-                                    float j,
-                                    float scale,
-                                    sf::Color colors[4]){
+void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Color colors[4]){
     alignas(8) float32_t real[4] = _REAL_4;
     alignas(8) float32_t imag[4] = _IMAG_4;
 
     int crit[4] = {};
+
+    #if ALGO_OPTIMIZATION == 1
 
     double ro[4]   = _RO_4;
     double teta[4] = _TETA_4;
     double ro_c[4] = _RO_MAX_4;
 
     if (_CHECK_RO_4) _BLACK_RET_4
+
+    #endif
 
     alignas(16) float32x4_t real_members = vld1q_f32(real);
     alignas(16) float32x4_t imag_members = vld1q_f32(imag);
@@ -137,21 +135,21 @@ void mandelbrotSetPointARMIntrinces(sf::Vector2f center_pos,
     _SET_COLOR_4;
 }
 
-void mandelbrotSetPointParallel(sf::Vector2f center_pos,
-                                dot_type i,
-                                dot_type j,
-                                dot_type scale,
-                                sf::Color colors[PARALLEL_COEF]){
+void mandelbrotSetPointParallel(ScaleView* view, dot_type i, dot_type j, sf::Color colors[PARALLEL_COEF]){
     alignas(8) dot_type real[PARALLEL_COEF] = _REAL;
     dot_type imag[PARALLEL_COEF] = _IMAG;
 
     int crit[PARALLEL_COEF] = {};
+
+    #if ALGO_OPTIMIZATION == 1
 
     double ro[PARALLEL_COEF]   = _RO;
     double teta[PARALLEL_COEF] = _TETA;
     double ro_c[PARALLEL_COEF] = _RO_MAX;
 
     if (_CHECK_RO) _BLACK_RET
+
+    #endif
 
     dot_type real_first[PARALLEL_COEF]   = _REAL;
     dot_type imag_first[PARALLEL_COEF]   = _IMAG;
