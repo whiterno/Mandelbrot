@@ -1,9 +1,6 @@
 #ifndef APP_CONFIG_H
 #define APP_CONFIG_H
 
-#define START_POINT     {0, 0}
-#define GREY_RGB        255, 255, 255, 120
-
 #ifndef DOT_TYPE
 #define DOT_TYPE float
 #endif
@@ -18,8 +15,12 @@ const float BASE_SCALE   = 1;
 const int BASE_SHIFT     = 100;
 const int DOTS_PER_PIXEL = 300;
 const float SCALE_MULT   = 2;
+const float COORDS_DIV   = 2 * SCALE_MULT / (SCALE_MULT - 1);
 
 const int ITERATIONS = 1024;
+
+const sf::Color    GREY{255, 255, 255, 120};
+const sf::Vector2f START_POINT{0, 0};
 
 typedef struct Vector{
     DOT_TYPE x;

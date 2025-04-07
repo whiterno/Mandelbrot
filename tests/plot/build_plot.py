@@ -19,9 +19,9 @@ def readData(filename):
 
 def drawPlotDiffOpt(no_op, arm, op_100_4):
     colors = plt.cm.rainbow([i/6 for i in range(6)])
-    plt.plot(no_op[0],    no_op[1],    color=colors[0], label="No optimization")
-    plt.plot(arm[0],      arm[1],      color=colors[1], label="ARM Neon intrinsics")
-    plt.plot(op_100_4[0], op_100_4[1], color=colors[2], label="x4 Parallelism")
+    plt.scatter(no_op[0],    no_op[1],    s=1, color=colors[0], label="No optimization")
+    plt.scatter(arm[0],      arm[1],      s=1, color=colors[1], label="ARM Neon intrinsics")
+    plt.scatter(op_100_4[0], op_100_4[1], s=1, color=colors[2], label="x4 Unrolling")
 
     plt.yticks(np.arange(0, 12, 1))
     plt.title("Time plot of FPS with different optimizations")
@@ -33,14 +33,30 @@ def drawPlotDiffOpt(no_op, arm, op_100_4):
 
     return
 
-def drawPlotDiffCoefs(op_100_4, op_100_8, op_100_12, op_100_16):
+def drawPlotVersus(op_100_16, op_100_32):
+    plt.clf()
     colors = plt.cm.rainbow([i/6 for i in range(6)])
-    plt.plot(op_100_8[0],  op_100_8[1],  color=colors[3], label="x8 Parallelism")
-    plt.plot(op_100_12[0], op_100_12[1], color=colors[4], label="x12 Parallelism")
-    plt.plot(op_100_16[0], op_100_16[1], color=colors[5], label="x16 Parallelism")
+    plt.scatter(op_100_16[0], op_100_16[1], s=1, color=colors[0], label="x16 Unrolling")
+    plt.scatter(op_100_32[0], op_100_32[1], s=1, color=colors[1], label="x32 Unrolling")
 
     plt.yticks(np.arange(0, 27, 1))
-    plt.title("Time plot of FPS with different loop parallelism coefficients")
+    plt.title("Time plot of FPS with x32 and x16 unrolling")
+    plt.ylabel("FPS")
+    plt.xlabel("Iteration index")
+    plt.legend()
+
+    plt.savefig("imgs/16_vs_32.png")
+
+    return
+
+def drawPlotDiffCoefs(op_100_4, op_100_8, op_100_12, op_100_16):
+    colors = plt.cm.rainbow([i/6 for i in range(6)])
+    plt.scatter(op_100_8[0],  op_100_8[1],  s=1, color=colors[3], label="x8 Unrolling")
+    plt.scatter(op_100_12[0], op_100_12[1], s=1, color=colors[4], label="x12 Unrolling")
+    plt.scatter(op_100_16[0], op_100_16[1], s=1, color=colors[5], label="x16 Unrolling")
+
+    plt.yticks(np.arange(0, 27, 1))
+    plt.title("Time plot of FPS with different loop unrolling coefficients")
     plt.ylabel("FPS")
     plt.xlabel("Iteration index")
     plt.legend()
@@ -61,6 +77,10 @@ def main():
     op_100_16 = readData("../data/op_100_16.txt")
 
     drawPlotDiffCoefs(op_100_4, op_100_8, op_100_12, op_100_16)
+
+    op_100_32 = readData("../data/op_100_32.txt")
+
+    drawPlotVersus(op_100_16, op_100_32)
 
     return
 

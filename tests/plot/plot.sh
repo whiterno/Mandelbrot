@@ -4,14 +4,5 @@ script_dir=$(dirname "$(realpath "$0")")
 
 cd "$script_dir" || exit
 
-python3 -m venv venv
-source venv/bin/activate
+python3 build_plot.py
 
-pip install matplotlib
-pip install numpy
-
-python build_plot.py
-
-deactivate
-
-rm -fr venv

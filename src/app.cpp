@@ -22,8 +22,7 @@ void runApp(draw_t draw){
                     .released_pos = {}};
 
     sf::RectangleShape mouse_box(START_POINT);
-    sf::Color mouse_box_color(GREY_RGB);
-    mouse_box.setFillColor(mouse_box_color);
+    mouse_box.setFillColor(GREY);
 
     sf::Font font("resources/Roboto_Condensed-Black.ttf");
     sf::Text text_fps(font);
@@ -87,13 +86,13 @@ void keyboardHandler(const std::optional<sf::Event> event, sf::RenderWindow* win
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::I){
             view->scale *= SCALE_MULT;
-            view->center_pos.x = SCALE_MULT * (view->center_pos.x) - WINDOW_WIDTH / 2;
-            view->center_pos.y = SCALE_MULT * (view->center_pos.y) - WINDOW_HEIGHT / 2;
+            view->center_pos.x = SCALE_MULT * (view->center_pos.x - WINDOW_WIDTH / COORDS_DIV);
+            view->center_pos.y = SCALE_MULT * (view->center_pos.y - WINDOW_HEIGHT / COORDS_DIV);
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::D){
             view->scale /= SCALE_MULT;
-            view->center_pos.x = view->center_pos.x / SCALE_MULT + WINDOW_WIDTH / (2 * SCALE_MULT);
-            view->center_pos.y = view->center_pos.y / SCALE_MULT + WINDOW_HEIGHT / (2 * SCALE_MULT);
+            view->center_pos.x = view->center_pos.x / SCALE_MULT + WINDOW_WIDTH / COORDS_DIV;
+            view->center_pos.y = view->center_pos.y / SCALE_MULT + WINDOW_HEIGHT / COORDS_DIV;
         }
     }
 }
@@ -120,8 +119,8 @@ void mouseHandler(const std::optional<sf::Event> event, ScaleView* view, MouseBo
         view->center_pos.x = multiplier * (view->center_pos.x - box->clicked_pos.x);
         view->center_pos.y = multiplier * (view->center_pos.y - box->clicked_pos.y);
 
-        mouse_box->setPosition({0.f, 0.f});
-        mouse_box->setSize({0.f, 0.f});
+        mouse_box->setPosition(START_POINT);
+        mouse_box->setSize(START_POINT);
     }
 }
 

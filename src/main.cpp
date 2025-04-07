@@ -50,6 +50,7 @@ void getFormat(int argc, char* argv[], int* draw_type, int* tests_amount){
             case '4': *draw_type = 4; break;
             case '5': *draw_type = 5; break;
             case 't': *tests_amount = atoi(optarg);
+            default: break;
         }
     }
 }

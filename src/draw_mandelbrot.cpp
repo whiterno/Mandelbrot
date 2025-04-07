@@ -11,17 +11,18 @@
 
 void drawWithIntrinsics(sf::Vertex* video_memory, ScaleView* view){
     for (int i = 0; i < WINDOW_WIDTH; i++){
-        for (int j = 0; j < WINDOW_HEIGHT; j += 4){
+        for (int j = 0; j < WINDOW_HEIGHT; j += ARM_COEF){
             long long col = i * WINDOW_HEIGHT;
-            sf::Color colors[4];
+            sf::Color colors[ARM_COEF];
+            sf::Vertex vertexes[ARM_COEF];
 
-            _VERTEX_4;
+            for (int k = 0; k < ARM_COEF; k++) vertexes[k] = {{(float)i, (float)j + k}, sf::Color::White, {(float)i, (float)j + k}};
 
             mandelbrotSetPointARMIntrinsics(view, i, j, colors);
 
-            _VERTEX_COLOR_4;
+            for (int k = 0; k < ARM_COEF; k++) vertexes[k].color = colors[k];
 
-            _VERTEX_MEM_4;
+            for (int k = 0; k < ARM_COEF; k++) video_memory[col + j + k] = vertexes[k];
         }
     }
 }
@@ -38,24 +39,26 @@ void drawNoOp(sf::Vertex* video_memory, ScaleView* view){
 
 void drawOp(sf::Vertex* video_memory, ScaleView* view){
     for (int i = 0; i < WINDOW_WIDTH; i++){
-        for (int j = 0; j < WINDOW_HEIGHT; j += PARALLEL_COEF){
+        for (int j = 0; j < WINDOW_HEIGHT; j += UNROLL_COEF){
             long long col = i * WINDOW_HEIGHT;
-            sf::Color colors[PARALLEL_COEF];
+            sf::Color colors[UNROLL_COEF];
+            sf::Vertex vertexes[UNROLL_COEF];
 
-            _VERTEX;
+            for (int k = 0; k < UNROLL_COEF; k++) vertexes[k] = {{(float)i, (float)j + k}, sf::Color::White, {(float)i, (float)j + k}};
 
             mandelbrotSetPointParallel(view, i, j, colors);
 
-            _VERTEX_COLOR;
+            for (int k = 0; k < UNROLL_COEF; k++) vertexes[k].color = colors[k];
 
-            _VERTEX_MEM;
+            for (int k = 0; k < UNROLL_COEF; k++) video_memory[col + j + k] = vertexes[k];
         }
     }
 }
 
 sf::Vertex mandelbrotSetPoint(ScaleView* view, float i, float j){
     sf::Vertex vertex{{i, j}, sf::Color::White, {i, j}};
-    Complex_t num = {REAL(0), IMAG(0)};
+    Complex_t num = {(i - view->center_pos.x) / (view->scale * DOTS_PER_PIXEL),
+                     (j - view->center_pos.y) / (view->scale * DOTS_PER_PIXEL)};
 
     #if ALGO_OPTIMIZATION == 1
 
@@ -90,18 +93,32 @@ sf::Vertex mandelbrotSetPoint(ScaleView* view, float i, float j){
 }
 
 void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Color colors[4]){
-    alignas(8) float32_t real[4] = {float(REAL(0)), float(REAL(0)), float(REAL(0)), float(REAL(0))};
-    alignas(8) float32_t imag[4] = {float(IMAG(0)), float(IMAG(1)), float(IMAG(2)), float(IMAG(3))};
+    alignas(8) float32_t real[ARM_COEF] = {};
+    alignas(8) float32_t imag[ARM_COEF] = {};
+
+    for (int k = 0; k < ARM_COEF; k++) real[k] = (i - float(view->center_pos.x)) / (view->scale * DOTS_PER_PIXEL);
+    for (int k = 0; k < ARM_COEF; k++) imag[k] = (j + k - float(view->center_pos.y)) / (view->scale * DOTS_PER_PIXEL);
 
     int crit[4] = {};
 
     #if ALGO_OPTIMIZATION == 1
 
-    double ro[4]   = _RO_4;
-    double teta[4] = _TETA_4;
-    double ro_c[4] = _RO_MAX_4;
+    double ro[ARM_COEF]   = {};
+    double teta[ARM_COEF] = {};
+    double ro_c[ARM_COEF] = {};
 
-    if (_CHECK_RO_4) _BLACK_RET_4
+    for (int k = 0; k < ARM_COEF; k++) ro[k]   = sqrt((real[k] - 1.f/4) * (real[k] - 1.f/4) + imag[k] * imag[k]);
+    for (int k = 0; k < ARM_COEF; k++) teta[k] = atan2(imag[k], real[k] - 1.f/4);
+    for (int k = 0; k < ARM_COEF; k++) ro_c[k] = 1.f/2 -1.f/2 * cos(teta[k]);
+
+    bool check_ro = 1;
+    for (int k = 0; k < ARM_COEF; k++) check_ro = check_ro && (ro[k] <= ro_c[k]);
+
+    if (check_ro){
+        for (int k = 0; k < ARM_COEF; k++) colors[k] = sf::Color::Black;
+
+        return;
+    }
 
     #endif
 
@@ -120,7 +137,7 @@ void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Colo
 
         check_coords = vaddq_f32(real_squared, imag_squared);
 
-        _CRIT_ASSIGN_4;
+        for (int m = 0; m < ARM_COEF; m++) crit[m] = (check_coords[m] > 4 && crit[m] == 0) ? k : crit[m];
 
         imag_members = vmulq_f32(real_members, imag_members);
         imag_members = vmlaq_n_f32(imag_first, imag_members, 2.f);
@@ -128,55 +145,77 @@ void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Colo
         real_members = vsubq_f32(real_squared, imag_squared);
         real_members = vaddq_f32(real_members, real_first);
 
-        _CHECK_CRIT_BREAK_4;
+        bool crit_flag = 1;
+        for (int m = 0; m < ARM_COEF; m++) crit_flag = crit_flag && (crit[m] != 0);
     }
 
-    _SET_COLOR_4;
+    for (int k = 0; k < ARM_COEF; k++) colors[k] = setColor(crit[k]);
 }
 
-void mandelbrotSetPointParallel(ScaleView* view, DOT_TYPE i, DOT_TYPE j, sf::Color colors[PARALLEL_COEF]){
-    alignas(8) DOT_TYPE real[PARALLEL_COEF] = _REAL;
-    DOT_TYPE imag[PARALLEL_COEF] = _IMAG;
+void mandelbrotSetPointParallel(ScaleView* view, DOT_TYPE i, DOT_TYPE j, sf::Color colors[UNROLL_COEF]){
+    DOT_TYPE real[UNROLL_COEF] = {};
+    DOT_TYPE imag[UNROLL_COEF] = {};
 
-    int crit[PARALLEL_COEF] = {};
+    for (int k = 0; k < UNROLL_COEF; k++) real[k] = (i - view->center_pos.x) / (view->scale * DOTS_PER_PIXEL);
+    for (int k = 0; k < UNROLL_COEF; k++) imag[k] = (j + k - view->center_pos.y) / (view->scale * DOTS_PER_PIXEL);
+
+    int crit[UNROLL_COEF] = {};
 
     #if ALGO_OPTIMIZATION == 1
 
-    double ro[PARALLEL_COEF]   = _RO;
-    double teta[PARALLEL_COEF] = _TETA;
-    double ro_c[PARALLEL_COEF] = _RO_MAX;
+    double ro[UNROLL_COEF]   = {};
+    double teta[UNROLL_COEF] = {};
+    double ro_c[UNROLL_COEF] = {};
 
-    if (_CHECK_RO) _BLACK_RET
+    for (int k = 0; k < UNROLL_COEF; k++) ro[k]   = sqrt((real[k] - 1.f/4) * (real[k] - 1.f/4) + imag[k] * imag[k]);
+    for (int k = 0; k < UNROLL_COEF; k++) teta[k] = atan2(imag[k], real[k] - 1.f/4);
+    for (int k = 0; k < UNROLL_COEF; k++) ro_c[k] = 1.f/2 -1.f/2 * cos(teta[k]);
+
+    bool check_ro = 1;
+    for (int k = 0; k < UNROLL_COEF; k++) check_ro = check_ro && (ro[k] <= ro_c[k]);
+
+    if (check_ro){
+        for (int k = 0; k < UNROLL_COEF; k++) colors[k] = sf::Color::Black;
+
+        return;
+    }
 
     #endif
 
-    DOT_TYPE real_first[PARALLEL_COEF]   = _REAL;
-    DOT_TYPE imag_first[PARALLEL_COEF]   = _IMAG;
-    DOT_TYPE check_coords[PARALLEL_COEF] = {};
+    DOT_TYPE real_first[UNROLL_COEF]   = {};
+    DOT_TYPE imag_first[UNROLL_COEF]   = {};
+    DOT_TYPE check_coords[UNROLL_COEF] = {};
 
-    DOT_TYPE real_squared[PARALLEL_COEF] = {};
-    DOT_TYPE imag_squared[PARALLEL_COEF] = {};
+    DOT_TYPE real_squared[UNROLL_COEF] = {};
+    DOT_TYPE imag_squared[UNROLL_COEF] = {};
+
+    for (int k = 0; k < UNROLL_COEF; k++) real_first[k] = (i - view->center_pos.x) / (view->scale * DOTS_PER_PIXEL);
+    for (int k = 0; k < UNROLL_COEF; k++) imag_first[k] = (j + k - view->center_pos.y) / (view->scale * DOTS_PER_PIXEL);
 
     for (int k = 0; k < ITERATIONS; k++){
-        for (int m = 0; m < PARALLEL_COEF; m++){
+        for (int m = 0; m < UNROLL_COEF; m++){
             real_squared[m] = real[m] * real[m];
             imag_squared[m] = imag[m] * imag[m];
         }
-        for (int m = 0; m < PARALLEL_COEF; m++){
+        for (int m = 0; m < UNROLL_COEF; m++){
             check_coords[m] = real_squared[m] + imag_squared[m];
         }
 
-        _CRIT_ASSIGN;
+        for (int m = 0; m < UNROLL_COEF; m++) crit[m] = (check_coords[m] > 4 && crit[m] == 0) ? k : crit[m];
 
-        for (int m = 0; m < PARALLEL_COEF; m++){
+
+        for (int m = 0; m < UNROLL_COEF; m++){
             imag[m] = 2 * (imag[m] * real[m]) + imag_first[m];
             real[m] = real_squared[m] - imag_squared[m] + real_first[m];
         }
 
-        _CHECK_CRIT_BREAK;
+        bool crit_flag = 1;
+        for (int m = 0; m < UNROLL_COEF; m++) crit_flag = crit_flag && (crit[m] != 0);
+
+        if (crit_flag) break;
     }
 
-    _SET_COLOR;
+    for (int k = 0; k < UNROLL_COEF; k++) colors[k] = setColor(crit[k]);
 }
 
 sf::Color setColor(int crit){
