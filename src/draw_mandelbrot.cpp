@@ -31,7 +31,7 @@ void drawNoOp(sf::Vertex* video_memory, ScaleView* view){
         for (int j = 0; j < WINDOW_HEIGHT; j += 1){
             sf::Vertex vertex1 = mandelbrotSetPoint(view, i, j);
 
-            video_memory[i * WINDOW_HEIGHT + j]     = vertex1;
+            video_memory[i * WINDOW_HEIGHT + j] = vertex1;
         }
     }
 }
@@ -90,8 +90,8 @@ sf::Vertex mandelbrotSetPoint(ScaleView* view, float i, float j){
 }
 
 void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Color colors[4]){
-    alignas(8) float32_t real[4] = _REAL_4;
-    alignas(8) float32_t imag[4] = _IMAG_4;
+    alignas(8) float32_t real[4] = {float(REAL(0)), float(REAL(0)), float(REAL(0)), float(REAL(0))};
+    alignas(8) float32_t imag[4] = {float(IMAG(0)), float(IMAG(1)), float(IMAG(2)), float(IMAG(3))};
 
     int crit[4] = {};
 
@@ -117,7 +117,6 @@ void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Colo
     for (int k = 0; k < ITERATIONS; k++){
         real_squared = vmulq_f32(real_members, real_members);
         imag_squared = vmulq_f32(imag_members, imag_members);
-        check_coords = vmovq_n_f32(0);
 
         check_coords = vaddq_f32(real_squared, imag_squared);
 
@@ -135,9 +134,9 @@ void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Colo
     _SET_COLOR_4;
 }
 
-void mandelbrotSetPointParallel(ScaleView* view, dot_type i, dot_type j, sf::Color colors[PARALLEL_COEF]){
-    alignas(8) dot_type real[PARALLEL_COEF] = _REAL;
-    dot_type imag[PARALLEL_COEF] = _IMAG;
+void mandelbrotSetPointParallel(ScaleView* view, DOT_TYPE i, DOT_TYPE j, sf::Color colors[PARALLEL_COEF]){
+    alignas(8) DOT_TYPE real[PARALLEL_COEF] = _REAL;
+    DOT_TYPE imag[PARALLEL_COEF] = _IMAG;
 
     int crit[PARALLEL_COEF] = {};
 
@@ -151,12 +150,12 @@ void mandelbrotSetPointParallel(ScaleView* view, dot_type i, dot_type j, sf::Col
 
     #endif
 
-    dot_type real_first[PARALLEL_COEF]   = _REAL;
-    dot_type imag_first[PARALLEL_COEF]   = _IMAG;
-    dot_type check_coords[PARALLEL_COEF] = {};
+    DOT_TYPE real_first[PARALLEL_COEF]   = _REAL;
+    DOT_TYPE imag_first[PARALLEL_COEF]   = _IMAG;
+    DOT_TYPE check_coords[PARALLEL_COEF] = {};
 
-    dot_type real_squared[PARALLEL_COEF] = {};
-    dot_type imag_squared[PARALLEL_COEF] = {};
+    DOT_TYPE real_squared[PARALLEL_COEF] = {};
+    DOT_TYPE imag_squared[PARALLEL_COEF] = {};
 
     for (int k = 0; k < ITERATIONS; k++){
         for (int m = 0; m < PARALLEL_COEF; m++){

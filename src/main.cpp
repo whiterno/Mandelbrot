@@ -1,8 +1,5 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
-#include <arm_neon.h>
-#include <stdalign.h>
-#include <assert.h>
 #include <getopt.h>
 
 #include "app.h"
@@ -22,7 +19,7 @@ int main(int argc, char* argv[]){
         runApp(draw_array[draw_type]);
     }
     else{
-        double average_time = runTests(tests_amount, draw_type - 3);
+        runTests(tests_amount, draw_array[draw_type - 3]);
     }
 
     return 0;

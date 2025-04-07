@@ -5,7 +5,9 @@
 #define ALGO_OPTIMIZATION 0
 #endif
 
-#define PARALLEL_COEF 12
+#ifndef PARALLEL_COEF
+#define PARALLEL_COEF 4
+#endif
 
 void drawWithIntrinsics(sf::Vertex* video_memory, ScaleView* view);
 
@@ -17,7 +19,7 @@ sf::Vertex mandelbrotSetPoint(ScaleView* view, float i, float j);
 
 void mandelbrotSetPointARMIntrinsics(ScaleView* view, float i, float j, sf::Color colors[4]);
 
-void mandelbrotSetPointParallel(ScaleView* view, dot_type i, dot_type j, sf::Color colors[PARALLEL_COEF]);
+void mandelbrotSetPointParallel(ScaleView* view, DOT_TYPE i, DOT_TYPE j, sf::Color colors[PARALLEL_COEF]);
 
 sf::Color setColor(int crit);
 
@@ -80,7 +82,7 @@ sf::Color setColor(int crit);
 #define _VERTEX_COLOR_12    VERTEX_COLOR(0); VERTEX_COLOR(1); VERTEX_COLOR(2); VERTEX_COLOR(3); VERTEX_COLOR(4); VERTEX_COLOR(5); VERTEX_COLOR(6); VERTEX_COLOR(7); VERTEX_COLOR(8); VERTEX_COLOR(9); VERTEX_COLOR(10); VERTEX_COLOR(11)
 #define _VERTEX_MEM_12      VERTEX_MEM(0); VERTEX_MEM(1); VERTEX_MEM(2); VERTEX_MEM(3); VERTEX_MEM(4); VERTEX_MEM(5); VERTEX_MEM(6); VERTEX_MEM(7); VERTEX_MEM(8); VERTEX_MEM(9); VERTEX_MEM(10); VERTEX_MEM(11)
 
-#define _REAL_16            {REAL(0), REAL(1), REAL(2), REAL(3), REAL(4), REAL(5), REAL(6), REAL(7), REAL(8), REAL(9), REAL(10), REAL(11), REAL(12), REAL(13), REAL(14), REAL(15)}
+#define _REAL_16            {REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0), REAL(0)}
 #define _IMAG_16            {IMAG(0), IMAG(1), IMAG(2), IMAG(3), IMAG(4), IMAG(5), IMAG(6), IMAG(7), IMAG(8), IMAG(9), IMAG(10), IMAG(11), IMAG(12), IMAG(13), IMAG(14), IMAG(15)}
 #define _RO_16              {RO(0), RO(1), RO(2), RO(3), RO(4), RO(5), RO(6), RO(7), RO(8), RO(9), RO(10), RO(11), RO(12), RO(13), RO(14), RO(15)}
 #define _TETA_16            {TETA(0), TETA(1), TETA(2), TETA(3), TETA(4), TETA(5), TETA(6), TETA(7), TETA(8), TETA(9), TETA(10), TETA(11), TETA(12), TETA(13), TETA(14), TETA(15)}

@@ -15,7 +15,7 @@ void runApp(draw_t draw){
 
     ScaleView view = {.scale      = BASE_SCALE,
                       .shift      = BASE_SHIFT,
-                      .center_pos = {WINDOW_WIDTH / 3 * 2, WINDOW_HEIGHT / 2}};
+                      .center_pos = {BASE_CENTER_X, BASE_CENTER_Y}};
 
     MouseBox box = {.is_clicked   = false,
                     .clicked_pos  = {},
@@ -87,13 +87,13 @@ void keyboardHandler(const std::optional<sf::Event> event, sf::RenderWindow* win
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::I){
             view->scale *= SCALE_MULT;
-            view->center_pos.x = SCALE_MULT * (view->center_pos.x - WINDOW_WIDTH / 4);
-            view->center_pos.y = SCALE_MULT * (view->center_pos.y - WINDOW_HEIGHT / 4);
+            view->center_pos.x = SCALE_MULT * (view->center_pos.x) - WINDOW_WIDTH / 2;
+            view->center_pos.y = SCALE_MULT * (view->center_pos.y) - WINDOW_HEIGHT / 2;
         }
         if (key_pressed->scancode == sf::Keyboard::Scancode::D){
-            view->scale /= 2;
-            view->center_pos.x = view->center_pos.x / SCALE_MULT + WINDOW_WIDTH / 4;
-            view->center_pos.y = view->center_pos.y / SCALE_MULT + WINDOW_HEIGHT / 4;
+            view->scale /= SCALE_MULT;
+            view->center_pos.x = view->center_pos.x / SCALE_MULT + WINDOW_WIDTH / (2 * SCALE_MULT);
+            view->center_pos.y = view->center_pos.y / SCALE_MULT + WINDOW_HEIGHT / (2 * SCALE_MULT);
         }
     }
 }

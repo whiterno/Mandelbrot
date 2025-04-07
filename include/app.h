@@ -4,25 +4,26 @@
 #define START_POINT     {0, 0}
 #define GREY_RGB        255, 255, 255, 120
 
-#ifndef dot_type
-#define dot_type float
+#ifndef DOT_TYPE
+#define DOT_TYPE float
 #endif
 
 const int WINDOW_WIDTH  = 1200;
 const int WINDOW_HEIGHT = 816;
 const int WINDOW_SIZE   = WINDOW_WIDTH * WINDOW_HEIGHT;
+const int BASE_CENTER_X = WINDOW_WIDTH / 3 * 2;
+const int BASE_CENTER_Y = WINDOW_HEIGHT / 2;
 
 const float BASE_SCALE   = 1;
 const int BASE_SHIFT     = 100;
 const int DOTS_PER_PIXEL = 300;
 const float SCALE_MULT   = 2;
 
-
 const int ITERATIONS = 1024;
 
 typedef struct Vector{
-    dot_type x;
-    dot_type y;
+    DOT_TYPE x;
+    DOT_TYPE y;
 } Vector;
 
 typedef struct ScaleView{

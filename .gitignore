@@ -2,3 +2,4 @@
 .DS_Store
 main.out
 objs/
+tests/data
